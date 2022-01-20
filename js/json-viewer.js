@@ -1,3 +1,5 @@
+// https://github.com/LorDOniX/json-viewer
+
 /**
  * JSONViewer - by Roman Makudera 2016 (c) MIT licence.
  */
