@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <!-- Basic Page Needs -->
+    <meta charset="utf-8">
+    <title>Defold App Manifest generator</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Mobile Specific Metas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- FONT -->
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/skeleton.css">
+    <link rel="stylesheet" href="css/crashtool.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/favicon.png">
+
+    <style>
+        input { margin-right: 1em; }
+        textarea
+        {
+           font-family: monospace;
+        }
+
+        .osicon {
+            margin-left: 5px;
+        }
+    </style>
+
+    <!-- https://www.w3schools.com/css/css_tooltip.asp -->
+    <style>
+        /* Tooltip container */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Tooltip text */
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 240px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px 20px;
+            border-radius: 6px;
+
+            /* Position the tooltip text - see examples below! */
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* Show the tooltip text when you mouse over the tooltip container */
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+        }
+    </style>
+
+    <!-- JSON Viewer - https://github.com/LorDOniX/json-viewer -->
+    <link rel="stylesheet" href="/css/json-viewer.css">
+    <script src="js/json-viewer.js"></script>
+
+    <script src="js/toast.min.js"></script>
+    <script src="js/crash.js"></script>
+
+    <script>
+        var current_crash_json = "";
+
+        function viewCrash(crash) {
+            current_crash_json = JSON.stringify(crash, (key, value) => typeof value === "bigint" ? value.toString() + "n" : value, '\t');
+            console.log(current_crash_json);
+            var viewer = new JSONViewer();
+            var div = document.getElementById("json");
+            div.appendChild(viewer.getContainer());
+            viewer.showJSON(crash, -1, 1);
+        }
+
+        document.addEventListener("dragover", event => {
+            if (event.stopPropagation) event.stopPropagation();
+            if (event.preventDefault) event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+        });
+
+        document.addEventListener("dragleave", event => {
+            if (event.stopPropagation) event.stopPropagation();
+            if (event.preventDefault) event.preventDefault();
+        });
+
+        document.addEventListener("drop", event => {
+            if (event.stopPropagation) event.stopPropagation();
+            if (event.preventDefault) event.preventDefault();
+            console.log("drop");
+
+            var files = [];
+            if (event.dataTransfer.items) {
+                for (var i = 0; i < event.dataTransfer.items.length; i++) {
+                    if (event.dataTransfer.items[i].kind === 'file') {
+                        var file = event.dataTransfer.items[i].getAsFile();
+                        files.push(file);
+                    }
+                }
+            } else {
+                files = event.dataTransfer.files;
+            }
+
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                console.log("file = " + file.name);
+                const reader = new FileReader();
+                reader.addEventListener("load", (event) => {
+                    console.log("loaded", event);
+                    viewCrash(readCrash(event.target.result));
+                });
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        // readCrash(FILE);
+        // https://github.com/mlcheng/js-toast/
+        function toast(text) {
+            var options = {
+                style: {
+                    main: {
+                        background: "#333",
+                        color: "#FFF",
+                        'box-shadow': '0 0 50px rgba(0, 0, 0, .7)'
+                    }
+                },
+                settings: {
+                    duration: 1500
+                }
+            };
+            iqwerty.toast.Toast(text, options);
+        }
+        function copy_to_clipboard() {
+            // document.getElementById("manifest").select();
+            // try {
+            //     var successful = document.execCommand('copy');
+            //     var msg = successful ? 'successful' : 'unsuccessful';
+            //     console.log('Copying text command was ' + msg);
+                // if (successful) {
+                //     toast('Copied!');
+                // }
+                // else {
+                //     toast('Oops, unable to copy');
+                // }
+            // } catch (err) {
+            //     console.log('Oops, unable to copy');
+            //     toast('Oops, unable to copy');
+            // }
+            // // deselect
+            // if (document.selection) {
+            //     document.selection.empty();
+            // }
+            // else if ( window.getSelection ) {
+            //     window.getSelection().removeAllRanges();
+            // }
+
+
+            try {
+                var dummy = document.createElement("textarea");
+                document.body.appendChild(dummy);
+                dummy.setAttribute("id", "dummy_id");
+                dummy.value = current_crash_json;
+                dummy.select();
+                var ok = document.execCommand("copy");
+                document.body.removeChild(dummy);
+                if (ok) {
+                    toast('Copied!');
+                }
+                else {
+                    toast('Oops, unable to copy');
+                }
+            } catch (err) {
+                console.log('Oops, unable to copy');
+                toast('Oops, unable to copy');
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div>
+        <div class="container">
+            <div class="row">
+                <div style="margin-top: 5rem;">
+                    <h3>Defold Crash Inspector</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="half-height">
+        <div class="container full-height">
+            <div class="row full-height">
+                <div class="twelve columns full-height">
+                    <div id="json" class="drop-area" style="position: relative; min-height: 100%">
+                        <!-- <i class="fas fa-bug awesome-icon" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></i> -->
+                        <i class="fas fa-copy awesome-icon" style="position: absolute; top: 0%; left: 100%; transform: translate(-100%, 50%);" onclick="copy_to_clipboard()"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

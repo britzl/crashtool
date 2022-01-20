@@ -1,0 +1,32 @@
+
+html, body {
+	height: 100%;
+}
+
+.full-height {
+	height: 100%;
+}
+
+.half-height {
+	height: 50%;
+}
+
+.awesome-icon {
+	font-size: 4rem;
+	padding-left: 2rem;
+	padding-right: 2rem;
+}
+
+.drop-area {
+	border-color: #f0f0f0;
+	border-style: dashed;
+}
+
+.drop-area .fa-bug {
+	font-size: 8rem;
+	transition: 0.3s;
+
+}
+.drop-area:hover .fa-bug {
+	font-size: 10rem;
+}
