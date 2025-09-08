@@ -1,4 +1,4 @@
-const VERSION = 2;
+const VERSION = 3;
 const MODULES_MAX = 128;
 const MODULE_NAME_SIZE = 64;
 const PTRS_MAX = 64;
@@ -12,6 +12,9 @@ function readCrash(buffer) {
 	const view = new DataView(buffer);
 	var offset = 0;
 
+	function readUint8() {
+		offset += 1; return view.getUint8(offset - 1, true);
+	}
 	function readUint32() {
 		offset += 4; return view.getUint32(offset - 4, true);
 	}
@@ -41,8 +44,8 @@ function readCrash(buffer) {
 	crash.version = readUint32();
 	crash.struct_size = readUint32();
 
-	if (crash.version != VERSION) {
-		throw new Error("Version mismatch. This tool only supports version " + VERSION + " crash files");
+	if (crash.version > VERSION) {
+		throw new Error("Version mismatch. This tool only supports up to version " + VERSION + " crash files");
 	}
 
 	crash.engine_version = readString(32);
@@ -56,24 +59,38 @@ function readCrash(buffer) {
 	crash.territory = readString(8);
 	crash.android_build_fingerprint = readString(128);
 
-	crash.userdata = []
+	crash.userdata = [];
 	for (var i = 0; i < USERDATA_SLOTS; i++) {
 		crash.userdata[i] = readString(USERDATA_SIZE);
 	}
-	crash.modulename = []
+	crash.modulename = [];
 	for (var i = 0; i < MODULES_MAX; i++) {
 		crash.modulename[i] = readString(MODULE_NAME_SIZE);
 	}
-	crash.moduleaddr = []
+	crash.moduleaddr = [];
 	for (var i = 0; i < MODULES_MAX; i++) {
 		crash.moduleaddr[i] = toHex(readUint64());
 	}
 	crash.signum = readUint32();
 	crash.ptr_count = readUint32();
-	crash.ptr = []
+	crash.ptr = [];
 	for (var i = 0; i < PTRS_MAX; i++) {
 		crash.ptr[i] = toHex(readUint64());
 	}
 	crash.extra = readString(EXTRA_MAX);
+
+	crash.modulesize = [];
+	crash.ptrmoduleindex = [];
+	crash.modulecount = 0;
+	if (crash.version == 3) {
+		for (var i = 0; i < PTRS_MAX; i++) {
+			crash.ptrmoduleindex[i] = readUint8();
+		}
+		for (var i = 0; i < MODULES_MAX; i++) {
+			crash.modulesize[i] = readUint32();
+		}
+		crash.modulecount = readUint32();
+	}
+
 	return crash;
 }
